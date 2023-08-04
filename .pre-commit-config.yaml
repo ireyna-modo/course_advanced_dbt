@@ -1,0 +1,55 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 2.1.2
+    hooks:
+      - id: sqlfluff-lint
+        additional_dependencies: [
+          'dbt-snowflake==1.5.2',
+          'sqlfluff-templater-dbt==2.1.2'
+        ]
+        types: [sql]
+      - id: sqlfluff-fix
+        stages: [manual]  # this command is available only to run manually
+        additional_dependencies: [
+          'dbt-snowflake==1.5.2',
+          'sqlfluff-templater-dbt==2.1.2'
+        ]
+        types: [sql]
+  - repo: https://github.com/dbt-checkpoint/dbt-checkpoint
+    rev: v1.1.1
+    hooks:
+    - id: dbt-compile # Compiles dbt (necessary for future hooks)
+      types: [sql,yaml]
+    - id: dbt-docs-generate # Generates the dbt docs (necessary for some future hooks)
+      types: [sql,yaml]
+    - id: check-source-table-has-description # Ensures all source tables have descriptions
+      types: [sql,yaml]
+    - id: check-model-has-tests # Ensures all models have at least 2 tests
+      args: ["--test-cnt", "2", "--"] # should be unique and not_null
+      files: ^models/
+      types: [sql,yaml]
+    - id: check-model-has-tests-by-name # can replace the hook above
+      args: ["--tests", "unique=1", "not_null=1", "--"]
+      files: ^models/
+      types: [sql,yaml]
+    - id: check-script-semicolon # Ensure that the model does not have a semicolon at the end of the file.
+      types: [sql]
+    - id: check-script-has-no-table-name # Ensures models only use source or ref macro to specify the table name.
+      types: [sql]
+    - id: check-model-has-all-columns # Ensures that mart models have all columns in the database also specified in the .yml
+      files: ^models/marts
+      types: [sql,yaml]
+    - id: check-model-tags
+      args: ["--tags", "hourly", "daily", "weekly", "monthly", "--"]
+      files: ^models/marts/core
+      types: [sql,yaml]
+    - id: replace-script-table-names # Replace table names with source or ref macros in the script.
+      stages: [manual]  # this command is available only to run manually
+    - id: generate-model-properties-file
+      args: ["--properties-file", "/models/{schema}/_{name}.yml", "--"]

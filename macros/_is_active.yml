@@ -1,0 +1,55 @@
+version: 2
+
+macros:
+  - name: is_active
+    description: Generates an active condition to filter data based on date ranges.
+    arguments:
+      - name: left_alias
+        description: The alias of the left table or CTE.
+        type: string
+
+      - name: right_alias
+        description: The alias of the right table or CTE.
+        type: string
+        # required: true
+
+      - name: curr_date
+        description: The name of the column representing the date to compare in the left table or CTE.
+        type: string
+        # required: true
+
+      - name: start_date
+        description: The name of the column representing the start date in the right table or CTE.
+        type: string
+        # required: true
+
+      - name: end_date
+        description: The name of the column representing the end date in the right table or CTE.
+        type: string
+        # required: true
+
+      - name: should_handle_nulls
+        description: >
+          Optional. If True, includes the condition to handle NULL end dates (default is False).
+          When set to True, the macro will consider rows with NULL end dates as active.
+        type: boolean
+        # required: false
+        # default: False
+
+# Returns: A SQL condition to filter data based on the active date range.
+
+# Notes: >
+#   This macro generates an active condition to filter data based on the date ranges
+#   provided in the left and right tables or CTEs. It compares the current date
+#   (from the left table) with the start and end dates (from the right table) to determine
+#   if a row falls within the active date range. If `should_handle_nulls` is True, rows
+#   with NULL end dates in the right table will also be considered as active.
+
+# Example Usage:
+#   1. Basic usage without handling NULL end dates:
+#      - active_condition: {{ is_active('table_a', 'table_b', 'current_date', 'start_date', 'end_date') }}
+#      - Output: table_a.current_date >= table_b.start_date AND table_a.current_date < table_b.end_date
+
+#   2. Usage with handling NULL end dates:
+#      - active_condition: {{ is_active('table_a', 'table_b', 'current_date', 'start_date', 'end_date', True) }}
+#      - Output: table_a.current_date >= table_b.start_date AND (table_a.current_date < table_b.end_date OR table_b.end_date IS NULL)

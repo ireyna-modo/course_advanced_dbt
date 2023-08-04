@@ -1,0 +1,51 @@
+version: 2
+
+macros:
+  - name: rolling_function_over_periods
+    description: Generates a SQL window function with a rolling calculation over a specified period.
+    arguments:
+      - name: column_name
+        description: The name of the column on which the function will be applied.
+        type: string
+        # required: true
+
+      - name: func
+        description: The SQL aggregate/window function to apply (e.g., 'avg', 'sum', 'count', etc.).
+        type: string
+        # default: avg
+        # required: false
+
+      - name: partition_by
+        description: The column used for partitioning the result. Leave empty for no partitioning.
+        type: string
+        # required: false
+
+      - name: order_by
+        description: The column used for ordering within the partition. Leave empty for no specific order.
+        type: string
+        # required: false
+
+      - name: periods
+        description: >
+          The number of rows preceding the current row for the calculation.
+          Use 'unbounded' to include all preceding rows in the range.
+        type: union[int, string]
+        # accepted_values: ['unbounded', integer]
+        # required: false
+        # default: 6
+
+  # Returns: A SQL window function string with the specified rolling calculation.
+
+  # Notes: This macro helps create a rolling window function in SQL, allowing you to calculate
+  #        aggregations over a specified period for each row in the dataset. The `periods`
+  #        parameter can be an integer to specify the number of preceding rows to include in the
+  #        window, or 'unbounded' to include all preceding rows in the range.
+
+  # Example Usage:
+  # 1. Calculate the rolling average of the 'amount' column over the last 6 rows for each 'user_id':
+  #    {{ macro('avg', 'amount', partition_by='user_id', order_by='date', periods=6) }}
+  #    Output: avg( amount ) OVER (PARTITION BY user_id ORDER BY date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS avg_7_periods_amount
+
+  # 2. Calculate the rolling average of the 'amount' column for each 'user_id' including all preceding rows:
+  #    {{ macro('avg', 'amount', partition_by='user_id', order_by='', periods='unbounded') }}
+  #    Output: avg( amount ) OVER (PARTITION BY user_id ROWS BETWEEN UNBOUNDED AND CURRENT ROW) AS avg_unbounded_periods_amount
