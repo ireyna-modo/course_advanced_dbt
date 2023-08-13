@@ -75,10 +75,9 @@ subscriber_months AS (
     FROM
         subscribers
         INNER JOIN months
-            -- All months after start date
-            ON months.date_month >= subscribers.first_start_month
-                -- and before end date
-                AND months.date_month < subscribers.last_end_month
+            ON {{ is_active('months', 'subscribers', 'date_month', 'first_start_month', 'last_end_month') }}
+
+
 ),
 
 -- Join together to create base CTE for MRR calculations
@@ -93,11 +92,8 @@ mrr_base AS (
         LEFT JOIN subscription_periods
             ON subscriber_months.user_id = subscription_periods.user_id
                 AND subscriber_months.subscription_id = subscription_periods.subscription_id
-                -- The month is on or after the subscription start date...
-                AND subscriber_months.date_month >= subscription_periods.start_month
-                -- and the month is before the subscription end date (and handle NULL case)
-                AND (subscriber_months.date_month < subscription_periods.end_month
-                    OR subscription_periods.end_month IS NULL)
+                AND {{ is_active('subscriber_months', 'subscription_periods', 'date_month', 'start_month', 'end_month', True) }}
+
 ),
 
 -- Calculate subscriber level MRR (monthly recurring revenue)
@@ -203,5 +199,7 @@ final AS (
 
 SELECT
     date_month::TEXT || '-' || subscription_id::TEXT || '-' || change_category::TEXT AS surrogate_key,
+    {{ rolling_function_over_periods(column_name='mrr_amount', func='avg', partition_by='user_id', order_by='date_month', periods=6) }},
+    {{ rolling_function_over_periods(column_name='mrr_amount', func='sum', partition_by='date_month', order_by='', periods='unbounded') }},
     *
 FROM final

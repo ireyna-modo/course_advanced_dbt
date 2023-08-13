@@ -44,4 +44,7 @@ models:
 
       - name: month_retained_number
         description: The number of months the subscription has been retained since it was started (first month = 0).
+
+      - name: avg_7_periods_mrr_amount
+        description: Rolling `mrr_amount` average over 7 periods partitioned by user
 sources: []
